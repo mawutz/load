@@ -1,24 +1,313 @@
--- Menggunakan PlaceId agar lebih spesifik mendeteksi tempat/game saat ini
+-- Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
 local currentID = game.PlaceId
 
--- Daftar script yang dikelompokkan berdasarkan Place ID game
-local scripts = {
-    [107192230357786] = "https://raw.githubusercontent.com/mawutz/load/refs/heads/main/fish%20for%20secret%20animals",
+-- Daftar Game yang Didukung
+local supportedGames = {
+    [107192230357786] = {
+        Title = "Fish For Secret Animals",
+        Image = "rbxassetid://107192230357786",
+        ScriptUrl = "https://raw.githubusercontent.com/mawutz/load/refs/heads/main/fish%20for%20secret%20animals"
+    },
+    -- Tambahkan game lain di sini dengan format yang sama:
+    -- [123456789] = {
+    --     Title = "Nama Game Lain",
+    --     Image = "rbxassetid://987654321",
+    --     ScriptUrl = "https://raw.githubusercontent.com/..."
+    -- },
 }
 
--- Cek apakah ID game saat ini ada di dalam daftar
-local targetScript = scripts[currentID]
-
-if targetScript then
-    print("Place ID terdeteksi: " .. tostring(currentID) .. ". Memuat script...")
-    local success, err = pcall(function()
-        loadstring(game:HttpGet(targetScript))()
-    end)
-    
-    if not success then
-        warn("Gagal menjalankan script: " .. tostring(err))
-    end
-else
-    -- Syntax warn yang tadinya error sudah diperbaiki di sini:
-    warn("Script untuk Place ID " .. tostring(currentID) .. " tidak ditemukan di dalam daftar.")
+-- Hapus UI lama jika script dijalankan ulang
+local guiParent = (gethui and gethui()) or CoreGui
+if guiParent:FindFirstChild("MawutzLoaderHub") then
+    guiParent.MawutzLoaderHub:Destroy()
 end
+
+-- Membuat ScreenGui Utama
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MawutzLoaderHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = guiParent
+
+-- Frame Utama
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0.8, 0, 0.65, 0)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- Batas ukuran responsif (PC & Mobile)
+local SizeConstraint = Instance.new("UISizeConstraint")
+SizeConstraint.MaxSize = Vector2.new(460, 330)
+SizeConstraint.MinSize = Vector2.new(280, 250)
+SizeConstraint.Parent = MainFrame
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Garis Tepi (Stroke) Gradasi Merah ke Ungu
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Parent = MainFrame
+
+local StrokeGradient = Instance.new("UIGradient")
+StrokeGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(220, 38, 38)),   -- Merah
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(147, 51, 234)), -- Ungu
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 38, 38))    -- Merah
+})
+StrokeGradient.Parent = MainStroke
+
+-- Header / Judul Atas
+local Header = Instance.new("Frame")
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 38)
+Header.BackgroundColor3 = Color3.fromRGB(22, 17, 30)
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 10)
+HeaderCorner.Parent = Header
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -50, 1, 0)
+TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Mawutz Hub"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 14
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = Header
+
+-- Tombol Close (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -30, 0.5, 0)
+CloseBtn.AnchorPoint = Vector2.new(0, 0.5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 50)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 11
+CloseBtn.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Kotak Peringatan Dwibahasa
+local WarningBox = Instance.new("Frame")
+WarningBox.Name = "WarningBox"
+WarningBox.Size = UDim2.new(1, -20, 0, 42)
+WarningBox.Position = UDim2.new(0, 10, 0, 46)
+WarningBox.BackgroundColor3 = Color3.fromRGB(35, 15, 22)
+WarningBox.BorderSizePixel = 0
+WarningBox.Parent = MainFrame
+
+local WarnCorner = Instance.new("UICorner")
+WarnCorner.CornerRadius = UDim.new(0, 6)
+WarnCorner.Parent = WarningBox
+
+local WarnStroke = Instance.new("UIStroke")
+WarnStroke.Color = Color3.fromRGB(220, 38, 38)
+WarnStroke.Thickness = 1
+WarnStroke.Parent = WarningBox
+
+local WarningText = Instance.new("TextLabel")
+WarningText.Size = UDim2.new(1, -10, 1, -4)
+WarningText.Position = UDim2.new(0, 5, 0, 2)
+WarningText.BackgroundTransparency = 1
+WarningText.Text = "⚠️ WARNING: Join a listed game.\n⚠️ PERINGATAN: Masuk ke game di list."
+WarningText.TextColor3 = Color3.fromRGB(255, 200, 200)
+WarningText.Font = Enum.Font.GothamMedium
+WarningText.TextSize = 10
+WarningText.TextWrapped = true
+WarningText.TextXAlignment = Enum.TextXAlignment.Left
+WarningText.Parent = WarningBox
+
+-- Tombol OPEN SCRIPT di bagian bawah (Tanpa UIGradient agar teks dijamin muncul jelas)
+local OpenButton = Instance.new("TextButton")
+OpenButton.Name = "OpenScriptButton"
+OpenButton.Size = UDim2.new(1, -20, 0, 34)
+OpenButton.Position = UDim2.new(0, 10, 1, -42)
+OpenButton.BackgroundColor3 = Color3.fromRGB(168, 85, 247) -- Warna ungu solid yang kontras
+OpenButton.Text = "OPEN SCRIPT"
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.TextSize = 12
+OpenButton.Parent = MainFrame
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 6)
+BtnCorner.Parent = OpenButton
+
+-- Daftar Game (ScrollingFrame)
+local ScrollList = Instance.new("ScrollingFrame")
+ScrollList.Name = "GameList"
+ScrollList.Size = UDim2.new(1, -20, 1, -142)
+ScrollList.Position = UDim2.new(0, 10, 0, 94)
+ScrollList.BackgroundColor3 = Color3.fromRGB(18, 14, 25)
+ScrollList.BorderSizePixel = 0
+ScrollList.ScrollBarThickness = 3
+ScrollList.ScrollBarImageColor3 = Color3.fromRGB(147, 51, 234)
+ScrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollList.Parent = MainFrame
+
+local ScrollCorner = Instance.new("UICorner")
+ScrollCorner.CornerRadius = UDim.new(0, 6)
+ScrollCorner.Parent = ScrollList
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 6)
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListLayout.Parent = ScrollList
+
+local ListPadding = Instance.new("UIPadding")
+ListPadding.PaddingTop = UDim.new(0, 6)
+ListPadding.PaddingBottom = UDim.new(0, 6)
+ListPadding.PaddingLeft = UDim.new(0, 6)
+ListPadding.PaddingRight = UDim.new(0, 6)
+ListPadding.Parent = ScrollList
+
+-- Mengisi Item Game ke dalam Daftar
+for placeId, info in pairs(supportedGames) do
+    local ItemFrame = Instance.new("Frame")
+    ItemFrame.Size = UDim2.new(1, 0, 0, 52)
+    ItemFrame.BackgroundColor3 = Color3.fromRGB(26, 20, 36)
+    ItemFrame.BorderSizePixel = 0
+    ItemFrame.Parent = ScrollList
+
+    local ItemCorner = Instance.new("UICorner")
+    ItemCorner.CornerRadius = UDim.new(0, 6)
+    ItemCorner.Parent = ItemFrame
+
+    if currentID == placeId then
+        local ActiveStroke = Instance.new("UIStroke")
+        ActiveStroke.Color = Color3.fromRGB(168, 85, 247)
+        ActiveStroke.Thickness = 1.5
+        ActiveStroke.Parent = ItemFrame
+    end
+
+    local GameIcon = Instance.new("ImageLabel")
+    GameIcon.Size = UDim2.new(0, 36, 0, 36)
+    GameIcon.Position = UDim2.new(0, 8, 0.5, 0)
+    GameIcon.AnchorPoint = Vector2.new(0, 0.5)
+    GameIcon.BackgroundColor3 = Color3.fromRGB(15, 12, 20)
+    GameIcon.Image = info.Image
+    GameIcon.Parent = ItemFrame
+
+    local IconCorner = Instance.new("UICorner")
+    IconCorner.CornerRadius = UDim.new(0, 4)
+    IconCorner.Parent = GameIcon
+
+    local GameTitle = Instance.new("TextLabel")
+    GameTitle.Size = UDim2.new(1, -54, 0, 18)
+    GameTitle.Position = UDim2.new(0, 52, 0, 8)
+    GameTitle.BackgroundTransparency = 1
+    GameTitle.Text = info.Title
+    GameTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    GameTitle.Font = Enum.Font.GothamBold
+    GameTitle.TextSize = 12
+    GameTitle.TextXAlignment = Enum.TextXAlignment.Left
+    GameTitle.TextTruncate = Enum.TextTruncate.AtEnd
+    GameTitle.Parent = ItemFrame
+
+    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Size = UDim2.new(1, -54, 0, 16)
+    StatusLabel.Position = UDim2.new(0, 52, 0, 26)
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Text = (currentID == placeId) and "🟢 Current Game / Game Saat Ini" or ("ID: " .. tostring(placeId))
+    StatusLabel.TextColor3 = (currentID == placeId) and Color3.fromRGB(192, 132, 252) or Color3.fromRGB(150, 150, 165)
+    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.TextSize = 10
+    StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StatusLabel.Parent = ItemFrame
+end
+
+-- Fungsi Notifikasi Dwibahasa
+local function showNotification(title, text)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = 5
+        })
+    end)
+
+    local NotifBanner = Instance.new("Frame")
+    NotifBanner.Size = UDim2.new(0.9, 0, 0, 55)
+    NotifBanner.Position = UDim2.new(0.5, 0, 0.5, 0)
+    NotifBanner.AnchorPoint = Vector2.new(0.5, 0.5)
+    NotifBanner.BackgroundColor3 = Color3.fromRGB(25, 10, 20)
+    NotifBanner.ZIndex = 10
+    NotifBanner.Parent = MainFrame
+
+    local BannerCorner = Instance.new("UICorner")
+    BannerCorner.CornerRadius = UDim.new(0, 8)
+    BannerCorner.Parent = NotifBanner
+
+    local BannerStroke = Instance.new("UIStroke")
+    BannerStroke.Color = Color3.fromRGB(239, 68, 68)
+    BannerStroke.Thickness = 2
+    BannerStroke.Parent = NotifBanner
+
+    local BannerText = Instance.new("TextLabel")
+    BannerText.Size = UDim2.new(1, -10, 1, -6)
+    BannerText.Position = UDim2.new(0, 5, 0, 3)
+    BannerText.BackgroundTransparency = 1
+    BannerText.Text = text
+    BannerText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BannerText.Font = Enum.Font.GothamBold
+    BannerText.TextSize = 10
+    BannerText.TextWrapped = true
+    BannerText.ZIndex = 11
+    BannerText.Parent = NotifBanner
+
+    task.delay(3.5, function()
+        if NotifBanner then
+            NotifBanner:Destroy()
+        end
+    end)
+end
+
+-- Aksi Tombol OPEN SCRIPT
+OpenButton.MouseButton1Click:Connect(function()
+    local targetGame = supportedGames[currentID]
+
+    if targetGame then
+        OpenButton.Text = "LOADING..."
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(targetGame.ScriptUrl))()
+        end)
+
+        if success then
+            ScreenGui:Destroy()
+        else
+            OpenButton.Text = "OPEN SCRIPT"
+            showNotification("Error", "Failed to load script / Gagal memuat:\n" .. tostring(err))
+        end
+    else
+        showNotification(
+            "Unsupported Game / Game Tidak Tersedia",
+            "❌ This game is not available yet.\n❌ Game ini belum tersedia di dalam daftar."
+        )
+    end
+end)
