@@ -1,0 +1,23 @@
+-- Ambil ID game tempat player saat ini berada
+local currentID = game.GameId -- atau gunakan game.PlaceId jika ingin spesifik per sub-place
+
+-- Daftar script yang dikelompokkan berdasarkan ID game
+local scripts = {
+    [107192230357786] = "https://raw.githubusercontent.com/mawutz/load/refs/heads/main/fish%20for%20secret%20animals",
+}
+
+-- Cek apakah ID game saat ini ada di dalam daftar
+local targetScript = scripts[currentID]
+
+if targetScript then
+    print("Game ID terdeteksi: " .. tostring(currentID) .. ". Memuat script...")
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(targetScript))()
+    end)
+    
+    if not success then
+        warn("Gagal menjalankan script: " .. tostring(err))
+    end
+else
+    warn("Script untuk Game ID " .. tostring(currentID) tostring(" tidak ditemukan di dalam daftar."))
+end
