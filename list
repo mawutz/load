@@ -1,7 +1,7 @@
--- Ambil ID game tempat player saat ini berada
-local currentID = game.GameId -- atau gunakan game.PlaceId jika ingin spesifik per sub-place
+-- Menggunakan PlaceId agar lebih spesifik mendeteksi tempat/game saat ini
+local currentID = game.PlaceId
 
--- Daftar script yang dikelompokkan berdasarkan ID game
+-- Daftar script yang dikelompokkan berdasarkan Place ID game
 local scripts = {
     [107192230357786] = "https://raw.githubusercontent.com/mawutz/load/refs/heads/main/fish%20for%20secret%20animals",
 }
@@ -10,7 +10,7 @@ local scripts = {
 local targetScript = scripts[currentID]
 
 if targetScript then
-    print("Game ID terdeteksi: " .. tostring(currentID) .. ". Memuat script...")
+    print("Place ID terdeteksi: " .. tostring(currentID) .. ". Memuat script...")
     local success, err = pcall(function()
         loadstring(game:HttpGet(targetScript))()
     end)
@@ -19,5 +19,6 @@ if targetScript then
         warn("Gagal menjalankan script: " .. tostring(err))
     end
 else
-    warn("Script untuk Game ID " .. tostring(currentID) tostring(" tidak ditemukan di dalam daftar."))
+    -- Syntax warn yang tadinya error sudah diperbaiki di sini:
+    warn("Script untuk Place ID " .. tostring(currentID) .. " tidak ditemukan di dalam daftar.")
 end
