@@ -11,7 +11,7 @@ local currentID = game.PlaceId
 local supportedGames = {
     [107192230357786] = {
         Title = "Fish For Secret Animals",
-        Image = "rbxassetid://107192230357786",
+        Image = "rbxassetid://100669083092160",
         ScriptUrl = "https://raw.githubusercontent.com/mawutz/load/refs/heads/main/fish%20for%20secret%20animals"
     },
     -- Tambahkan game lain di sini dengan format yang sama:
